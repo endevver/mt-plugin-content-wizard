@@ -48,20 +48,23 @@ sub _load_scw_yaml {
     # config.yaml contents, or it may be specified as a separate file. Either
     # way, we want to load it.
     my $app = MT->instance;
-    my $blog = $app->blog;
-    my $ts_id   = $blog->template_set;
+    # If a template set ID was provided, grab it. Otherwise get the current
+    # template set ID.
+    my $ts_id = @_ ? @_ : $app->blog->template_set;
+
     my $yaml;
     
     if ( $app->registry('template_sets')->{$ts_id}
                     ->{structured_content_wizards} =~ m/^[-\w]+\.yaml$/ ) {
+        # This is a reference to another YAML file. Load it and return the
+        # contents.
         $yaml = MT->registry('template_sets', $ts_id, 'structured_content_wizards');
     }
     else {
+        # This is just plain, inline YAML.
         $yaml = $app->registry('template_sets')->{$ts_id}
                     ->{structured_content_wizards};
     }
-    use Data::Dumper;
-    MT->log(Dumper($yaml));
     return $yaml;
 }
 
@@ -370,7 +373,7 @@ sub _load_tags {
         # Look through each template set for any wizards that might be defined.
         my @sets = keys %{ $r->{'template_sets'} };
         foreach my $ts_id (@sets) {
-            my $scw_yaml = _load_scw_yaml();
+            my $scw_yaml = _load_scw_yaml($ts_id);
             if ( $scw_yaml ) {
                 # At least one wizard has been defined for this theme.
                 foreach my $wizard_id ( keys %{ $scw_yaml } ) {
