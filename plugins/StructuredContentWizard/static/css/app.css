@@ -1,0 +1,22 @@
+li.step {
+    max-height: 370px;
+    overflow: auto;
+}
+
+.panel-header {
+    margin-bottom: 10px;
+}
+
+.field { width: 580px; }
+
+.required_missing {
+    color: red;
+}
+
+.field-type-separator h3 {
+    display: block;
+    padding-top: 8px;
+    padding-bottom: 3px;
+    border-bottom: 1px solid #cddee7;
+}
+

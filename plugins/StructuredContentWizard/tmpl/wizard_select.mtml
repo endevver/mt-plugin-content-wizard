@@ -1,0 +1,47 @@
+<mt:setvarblock name="page_title">Select a Wizard</mt:setvarblock>
+
+<mt:Include name="dialog/header.tmpl">
+
+<form method="post" action="<mt:Var name="script_url">">
+    <input type="hidden" name="__mode" value="start_scw" />
+    <input type="hidden" name="blog_id" value="<mt:Var name="blog_id">" />
+    <input type="hidden" name="magic_token" value="<mt:Var name="magic_token">" />
+
+    <mt:If name="wizards_loop">
+        <mt:Loop name="wizards_loop">
+            <mt:If name="__first__">
+            <p>More than one Structured Content Wizard has been defined. Select which you'd prefer to use, and let's get started!</p>
+            <mt:SetVarBlock name="wizards_count"><mt:Var name="count(wizards_loop)"></mt:SetVarBlock>
+            <select name="wizard_id" size="<mt:If name="wizards_count" lt="18"><mt:Var name="wizards_count"><mt:Else>18</mt:If>" style="width: 100%;">
+            </mt:If>
+                <option value="<mt:Var name="id">"<mt:If name="__first__"> selected="selected"</mt:If>><mt:Var name="label"></option>
+            <mt:If name="__last__">
+            </select>
+            </mt:If>
+        </mt:Loop>
+    <mt:Else>
+            <p>No Structured Content Wizards were defined for this theme.</p>
+    </mt:If>
+
+    <div class="actions-bar">
+        <div class="actions-bar-inner pkg actions">
+        <mt:If name="wizards_loop">
+            <button
+                onclick=""
+                type="submit"
+                class="primary-button"
+                accesskey="x"
+                title="Start Wizard">Start Wizard</button>
+        </mt:If>
+            <button
+                onclick="closeDialog(); return false"
+                type="submit"
+                class="close"
+                accesskey="x"
+                title="Close (x)">Close</button>
+        </div>
+    </div>
+
+</form>
+
+<mt:Include name="dialog/footer.tmpl">
