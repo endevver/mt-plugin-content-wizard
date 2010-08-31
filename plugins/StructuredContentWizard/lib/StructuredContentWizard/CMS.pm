@@ -50,12 +50,14 @@ sub _load_scw_yaml {
     my $app = MT->instance;
     # If a template set ID was provided, grab it. Otherwise get the current
     # template set ID.
-    my $ts_id = @_ ? @_ : $app->blog->template_set;
+    my ($ts_id) = @_ ? shift : $app->blog->template_set;
 
-    my $yaml;
-    
-    if ( $app->registry('template_sets')->{$ts_id}
-                    ->{structured_content_wizards} =~ m/^[-\w]+\.yaml$/ ) {
+    my $yaml = $app->registry('template_sets')->{$ts_id}
+                    ->{structured_content_wizards};
+    return $app->error('No Structured Content Wizards were defined.')
+        unless $yaml;
+
+    if ( $yaml =~ m/^[-\w]+\.yaml$/ ) {
         # This is a reference to another YAML file. Load it and return the
         # contents.
         $yaml = MT->registry('template_sets', $ts_id, 'structured_content_wizards');
@@ -65,7 +67,6 @@ sub _load_scw_yaml {
         $yaml = $app->registry('template_sets')->{$ts_id}
                     ->{structured_content_wizards};
     }
-    return $yaml;
 }
 
 sub start {
@@ -105,9 +106,9 @@ sub start {
     $param->{steps_loop} = \@steps;
     $param->{steps_count} = scalar @steps;
 
-    # Saving the template set ID makes it easy to save.
+    # Passing the template set ID to wizard_steps makes it easy to save.
     $param->{ts_id} = $app->blog->template_set;
-    my $scw_yaml = _load_scw_yaml();
+    my $scw_yaml = _load_scw_yaml($app->blog->template_set);
     $param->{wizard_label} = $scw_yaml->{$app->param('wizard_id')}->{label};
 
     return $app->load_tmpl('wizard_steps.mtml', $param);
@@ -124,7 +125,7 @@ sub save {
     # entered to a new YAML structure that can be saved as an asset.
     my $wizard_id = $app->param('wizard_id');
     my $ts_id     = $app->param('ts_id');
-    my $scw_yaml  = _load_scw_yaml();
+    my $scw_yaml  = _load_scw_yaml($ts_id);
     my $steps     = $scw_yaml->{$wizard_id}->{steps};
     my $data = {};
     # Go through each defined step. We don't really need to do anything here
@@ -195,20 +196,19 @@ sub _select_wizard {
     # Grab the current blog's template set ID and use that to determine if
     # any structured content wizards were created.
     my $ts_id = $app->blog->template_set;
-    my $cfg = _load_scw_yaml();
+    my $yaml  = _load_scw_yaml($ts_id);
 
     # Sort the wizards. They may have been ordered, so be sure to respect
     # that. Push them into a loop.
     my @wizards_loop;
     foreach my $wizard_id (
         sort {
-            ( $cfg->{$a}->{order} || 999 ) <=> ( $cfg->{$b}->{order} || 999 )
-        } keys %{$cfg}
+            ( $yaml->{$a}->{order} || 999 ) <=> ( $yaml->{$b}->{order} || 999 )
+        } keys %{$yaml}
       )
     {
         # Grab the wizard definition.
-        my $wizard = $cfg->{$wizard_id};
-
+        my $wizard = $yaml->{$wizard_id};
         push @wizards_loop, { 
             id    => $wizard_id, 
             label => $wizard->{label}, 
@@ -237,7 +237,7 @@ sub _build_wizard_options {
     
     # Grab the wizard definitions
     my $ts_id = $app->blog->template_set;
-    my $scw_yaml = _load_scw_yaml();
+    my $scw_yaml = _load_scw_yaml($ts_id);
     my $steps = $scw_yaml->{$wizard_id}->{steps};
     
     # Look at each defined Step. Each Step will have it's own "page" to help
