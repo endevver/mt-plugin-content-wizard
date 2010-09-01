@@ -11,8 +11,13 @@ sub find_field_def {
     if ( $app->blog ) {
         my $ts_id = $app->blog->template_set;
         my $r = $app->registry('template_sets');
-        my $steps = $r->{$ts_id}->{structured_content_wizards}
-                        ->{$wizard_id}->{steps};
+        
+        # We want to load the YAML--inline or external, so just use the 
+        # function over in StructuredContentWizard::CMS.
+        require StructuredContentWizard::CMS;
+        my $yaml = StructuredContentWizard::CMS::_load_scw_yaml($ts_id);
+
+        my $steps = $yaml->{$wizard_id}->{steps};
         # Go through each defined step. We don't really need to do anything
         # here because the fields are what we're really interested in.
         foreach my $step_name ( keys %{$steps} ) {

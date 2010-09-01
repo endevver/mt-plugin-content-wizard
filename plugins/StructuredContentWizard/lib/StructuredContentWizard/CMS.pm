@@ -54,8 +54,8 @@ sub _load_scw_yaml {
 
     my $yaml = $app->registry('template_sets')->{$ts_id}
                     ->{structured_content_wizards};
-    return $app->error('No Structured Content Wizards were defined.')
-        unless $yaml;
+    # Just fail silently if there are no wizards defined. 
+    return unless $yaml;
 
     if ( $yaml =~ m/^[-\w]+\.yaml$/ ) {
         # This is a reference to another YAML file. Load it and return the

@@ -7,7 +7,8 @@ __PACKAGE__->install_properties( { class_type => 'structured_content', } );
 __PACKAGE__->install_meta( { columns => [ 
         'yaml',
         'wizard_id',
-     ], } );
+     ], }
+);
 
 sub class_label { MT->translate('Structured Content'); }
 sub class_label_plural { MT->translate('Structured Content'); }
@@ -30,14 +31,15 @@ sub as_html {
     # Find which wizard was used to create this asset. There should only be
     # one wizard per asset.
     my ($wizard_id, $tmpl_identifier);
+    require StructuredContentWizard::CMS;
     foreach my $wizard ( keys %{$yaml} ) {
         $wizard_id = $wizard;
         # Now look at asset_output_template to find the template identifier
         # to use to render the asset.
         my $ts_id = $app->blog->template_set;
         my $r = $app->registry('template_sets');
-        $tmpl_identifier = $r->{$ts_id}->{structured_content_wizards}
-                                ->{$wizard}->{asset_output_template};
+        my $scw_yaml = StructuredContentWizard::CMS::_load_scw_yaml($ts_id);
+        $tmpl_identifier = $scw_yaml->{$wizard}->{asset_output_template};
     }
 
     # Now that we've got the template identifier that the wizard is supposed
@@ -78,7 +80,6 @@ sub as_html {
     # asset/markup so that MT can track the asset/entry relationship.
     return $asset->enclose( $built_tmpl );
 }
-
 
 1;
 
