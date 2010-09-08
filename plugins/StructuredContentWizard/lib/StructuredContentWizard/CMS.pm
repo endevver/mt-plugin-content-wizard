@@ -532,9 +532,18 @@ sub _load_tags {
                                         my $a = $ctx->stash('asset')
                                             or return $ctx->_no_asset_error();
                                         my $yaml = YAML::Tiny->read_string( $a->yaml );
-                                        # Grab the Asset ID
+                                        # Grab the link-group JSON
                                         my $value = $yaml->[0]->{$wizard_id}->{$tag};
-                                        
+                                        # The JSON data gets escaped and wrapped in quotes when YAML saves
+                                        # it. The complexity it creates means we should just fix the 
+                                        # string, before handing it off to create a JSON object.
+                                        # Remove extra escpaes
+                                        $value =~ s/\\(.)/$1/g;
+                                        # Reamove leading quote
+                                        $value =~ s/^\"//;
+                                        # Remove trailing quote
+                                        $value =~ s/\"$//;
+
                                         # Build the link group.
                                         # Wrapping double quotes around the array breaks the JSON::from_json
                                         # method, so check for an empty array (as in, no links supplied).
