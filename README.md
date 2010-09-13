@@ -1,6 +1,6 @@
 # Structured Content Wizard Overview
 
-The Structured Content Wizard plugin for Movable Type and Melody makes structured blogging and form-based content easy!
+The Structured Content Wizard plugin for Movable Type and Melody makes structured blogging and creating form-based content easy!
 
 Simply create a step-by-step wizard interface for authors to work with. Easily define your wizard with a YAML structure (no programming necessary!) in your theme, and specify a template to output your content into. The result is saved as an Asset that you can insert into an Entry or Page, for example.
 
@@ -92,6 +92,7 @@ The wizard being defined here is `newsletter`. Inside of the `newsletter` wizard
 Each "step" is defined inside of the `steps` key. A "step" is a page of the wizard. In the `newsletter` wizard defined above, only two steps are defined (`step1` and `step2`), however any number of steps can be defined. Steps are ordered alphanumerically by their key, so in this example `step1` comes first, then `step2`.
 
 Each step defines three properties:
+
 * `label` - a friendly name for this step of the wizard.
 * `hint` - an optional description of this step and the fields it contains.
 * `fields` -  the parent key to this step's fields.
@@ -100,7 +101,7 @@ Each field is defined inside of the step's `fields` key. Any number of fields ca
 
 ## Field Definitions
 
-Providing useful fields for an author is at the heart of creating a good wizard. The Structured Content Wizard implements Config Assistant's Field Types feature. If you've defined Theme Options or Plugin Options with Config Assistant, you already know how to define a field with SCW.
+Providing useful fields for an author is at the heart of creating a good wizard. The Structured Content Wizard implements Config Assistant's Field Types feature. If you've defined Theme Options or Plugin Options with Config Assistant, you already know how to define a field with the Structured Content Wizard.
 
 Just as with the wizard and steps, fields are defined with properties. In this example two fields have been defined (`title` and `image`). Note that your field keys (in this case `title` and `image`) must be unique within a wizard. The `tag` key must also be unique to the wizard.
 
@@ -121,7 +122,7 @@ Just as with the wizard and steps, fields are defined with properties. In this e
             tag: NewsletterImage
 
 Refer to Config Assistant's detailed explanation of field properties and field types to craft a field.
-http://github.com/endevver/mt-plugin-configassistant/blob/master/README.md
+[http://github.com/endevver/mt-plugin-configassistant/blob/master/README.md](http://github.com/endevver/mt-plugin-configassistant/blob/master/README.md)
 
 ## Output Template Module
 
