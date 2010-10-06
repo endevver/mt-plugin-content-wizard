@@ -4,11 +4,7 @@ $(document).ready(function() {
 
     $('#previous-step-button').click(function(){
         // Data doesn't really need to be validated when moving back--only forward.
-        // Before moving on verify that the data on this step is valid.
-        //if ( _validate_fields() ) {
-            // All required fields have been filled in.
-            wrap.trigger('prev.evtpaginate');
-        //}
+        wrap.trigger('prev.evtpaginate');
         return false;
     });
 
@@ -25,7 +21,11 @@ $(document).ready(function() {
         // The user has clicked the Complete Wizard button. We need to verify
         // the contents of the current step, then submit the form.
         if ( _validate_fields() ) {
-            // All required fields have been filled in, so we can submit the form now.
+            // All required fields have been filled in, so we can submit the
+            // form now. Also show the "processing" spinner, and set the
+            // target to the page, not the dialog box.
+            $('img#processing').show();
+            $('form#wizard_steps').attr('target','_top');
             $('#wizard_steps').submit();
         }
         return false;

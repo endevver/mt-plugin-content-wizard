@@ -20,3 +20,8 @@ li.step {
     border-bottom: 1px solid #cddee7;
 }
 
+img#processing {
+    display: none;
+    float: right;
+    padding: 5px 0 0 8px;
+}

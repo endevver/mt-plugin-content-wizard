@@ -3,9 +3,9 @@ id: StructuredContentWizard
 description: 'Structured blogging is a way to create content by following rules. The Structured Content Wizard will help you define those rules and create a workflow that makes it easy to follow them.'
 author_name: Endevver
 author_link: http://endevver
-version: 1.0
+version: 1.0.1
 schema_version: 1
-static_version: 1
+static_version: 2
 
 applications:
     cms:
@@ -18,3 +18,6 @@ object_types:
     asset.structured_content: MT::Asset::StructuredContent
 
 init_app: $StructuredContentWizard::StructuredContentWizard::CMS::init_app
+
+callbacks:
+    template_param.edit_asset: $StructuredContentWizard::StructuredContentWizard::CMS::xfrm_edit_asset

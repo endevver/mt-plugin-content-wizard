@@ -4,7 +4,7 @@ The Structured Content Wizard plugin for Movable Type and Melody makes structure
 
 Simply create a step-by-step wizard interface for authors to work with. Easily define your wizard with a YAML structure (no programming necessary!) in your theme, and specify a template to output your content into. The result is saved as an Asset that you can insert into an Entry or Page, for example.
 
-Many wizards can be defined within a single theme. So, for example, you can have both a Newsletter and a DVD Review wizard, each uniquely set up to match that that type of content. Each step of the wizard interface can have any number and type of fields to suit your requirements.
+Many wizards can be defined within a single theme. So, for example, you can have both a Newsletter and a DVD Review wizard, each uniquely set up to match that type of content. Each step of the wizard interface can have any number and type of fields to suit your requirements.
 
 
 # Prerequisites
@@ -172,6 +172,8 @@ If a structured content asset has already been created with a wizard, you can si
 ## Managing Structured Content
 
 The Structured Content Wizard creates assets, so managing them is just like managing other assets: click the Manage > Assets menu option. A Structured Content Quickfilter can help to sort assets.
+
+The contents of structured content assets can be edited through the same wizard interface they were created in. Within the Manage Assets screen locate the asset you want to edit and open it. Below the "thumbnail" you'll see a link to "edit this asset in the wizard" which takes you to the familiar wizard interface.
 
 
 # License

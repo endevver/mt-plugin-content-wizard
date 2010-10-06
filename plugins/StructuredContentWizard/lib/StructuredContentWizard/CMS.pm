@@ -82,6 +82,30 @@ sub start {
     my $param  = {};
     my $plugin = MT->component('StructuredContentWizard');
     
+    # If the user is trying to edit an existing SCW asset, we need to use the
+    # supplied ID to figure out which wizard they are using.
+    my ($asset, $yaml);
+    if ( $app->param('id') ) {
+        $asset = MT->model('asset')->load( $app->param('id') )
+            or return $app->errstr;
+        # Grab the YAML where the wizard details were saved.
+        $yaml = YAML::Tiny->read_string( $asset->yaml );
+        # The data we need is always in the first array of the YAML structure,
+        # so just copy it right back to the $yaml variable.
+        $yaml = $yaml->[0];
+        # Only one key exists at this point--the wizard ID (all saved field
+        # data exists inside of the wizard key). Grab that ID and save it
+        # so that SCW knows which wizard to use.
+        foreach my $wizard_id ( keys %{$yaml} ) {
+            $app->param( 'wizard_id', $wizard_id );
+        }
+        # Lastly, save the ID to be used in the template (we need it to
+        # update the existing asset when saving, rather than creating
+        # something new.)
+        $param->{asset_id} = $app->param('id');
+    }
+    
+    
     # To get started, a wizard must be selected. If many wizards are
     # available, let the user pick which to use. If only one, set it as the
     # default and just move along.
@@ -102,7 +126,9 @@ sub start {
     # At this point we have a valid wizard selected. Use it to build the
     # pages of options.
     $param->{wizard_id} = $app->param('wizard_id');
-    my @steps = _build_wizard_options();
+    # Pass the $yaml into _build_wizard_options. If the user is trying to
+    # edit an already-saved asset, then $yaml contains the asset contents.
+    my @steps = _build_wizard_options($yaml);
     $param->{steps_loop} = \@steps;
     $param->{steps_count} = scalar @steps;
 
@@ -168,10 +194,35 @@ sub save {
     # Create the YAML entry to save the data.
     my $yaml = YAML::Tiny->new;
     $yaml->[0]->{$wizard_id} = $data;
-    
+
+    # If an ID was supplied, the user is editing an asset. If none, then
+    # create a new asset.
+    my $asset;
+    if ( $app->param('asset_id') ) {
+        # This SCW asset is being edited. Load the saved asset and update it.
+        $asset = MT->model('asset')->load( $app->param('asset_id') )
+            or return $app->errstr;
+        $asset->yaml( $yaml->write_string() );
+        $asset->modified_by( $app->user->id );
+        $asset->save;
+        # The asset has been saved. Now just redirect to the Edit Asset page.
+        return $app->redirect(
+            $app->uri(
+                'mode' => 'view',
+                'args' => { 
+                    '_type'    => 'asset',
+                    'id'      => $app->param('asset_id'),
+                    'blog_id' => $app->param('blog_id'),
+                },
+            )
+        );
+    }
+
     # Create a new asset and save the YAML structure
     use MT::Asset::StructuredContent;
-    my $asset = MT::Asset::StructuredContent->new;
+    $asset = MT::Asset::StructuredContent->new;
+    # The asset label and description can be overriden when the user
+    # gets to MT's File Options page.
     $asset->label(       $app->param('wizard_label') );
     $asset->description( "Structured Content"        );
     $asset->wizard_id(   $wizard_id                  );
@@ -186,7 +237,6 @@ sub save {
     return $app->complete_insert(
         asset => $asset,
     );
-
 }
 
 sub _select_wizard {
@@ -222,6 +272,10 @@ sub _select_wizard {
 # (v1.10.3) and tweaked. Because we want to be able to use the fields and
 # capabilities already defined within CA, this is a good way to get started!
 sub _build_wizard_options {
+    # If the user is trying to edit an already-saved asset, then the YAML
+    # (with all of the saved values) will be passed here.
+    my ($yaml) = @_;
+
     my $app = MT->instance;
     my $wizard_id = $app->param('wizard_id');
     
@@ -239,7 +293,7 @@ sub _build_wizard_options {
     my $ts_id = $app->blog->template_set;
     my $scw_yaml = _load_scw_yaml($ts_id);
     my $steps = $scw_yaml->{$wizard_id}->{steps};
-    
+
     # Look at each defined Step. Each Step will have it's own "page" to help
     # organize the Wizard into something easy to walk through.
     foreach my $step_name (
@@ -293,9 +347,15 @@ sub _build_wizard_options {
             elsif ( $types->{ $field->{'type'} } ) {
                 # If the user didn't fill in all values, they may have to go
                 # back and correct that. So, capture the previously set field
-                # info and use that. Then fall back to the default value,
-                # then just a blank value.
-                my $value = $app->param($field_id) || $field->{default} || '';
+                # info and use that. Alternatively, the user may be editing a
+                # previously-created asset, so we want to present all saved
+                # data. If neither of those is true, display the YAML-supplied
+                # default value, then just fall back to a blank field.
+                my $value = 
+                    $app->param($field_id) 
+                    || $yaml->{$wizard_id}->{ $field->{tag} } 
+                    || $field->{default} 
+                    || ''; 
 
                 my $out;
                 my $label = $field->{label} ne '' ? &{$field->{label}} : '';
@@ -583,6 +643,32 @@ sub _load_tags {
     return $tags;
 }
 
+sub xfrm_edit_asset {
+    my ($cb, $app, $param, $tmpl) = @_;
+
+    # Give up if this isn't a structured content asset.
+    return unless ($param->{asset}->class eq 'structured_content');
+
+    # Grab the template itself, which we'll use to update the links.
+    my $tmpl_text = $tmpl->text;
+
+    # Remove the "View Asset" link (since it doesn't actually do anything)
+    # and add a link to open the wizard and edit the asset there.
+    my $old = q{<a href="<mt:var name="url" escape="html">"><__trans phrase="View Asset"></a>};
+    my $new = <<'HTML';
+<a href="javascript:void(0)" onclick="return openDialog(false, 'start_scw', 'blog_id=<mt:BlogID>&amp;id=<mt:Var name="id">&amp;return_args=__mode%3Dview%26_type%3Dasset%26blog_id%3D<mt:BlogID>%26id%3D<mt:Var name="id">')"><__trans phrase="Edit this asset in the wizard"></a>
+HTML
+    $tmpl_text =~ s/$old/$new/;
+
+    # Remove the "Embed Asset" link (since it's useless for structured
+    # content).
+    my $old = q{<div class="asset-embed">};
+    my $new = q{<div class="asset-embed hidden">};
+    $tmpl_text =~ s/$old/$new/;
+
+    # Now push the updated template back into the context. All done!
+    $tmpl->text( $tmpl_text );
+}
 
 1;
 
