@@ -25,7 +25,8 @@ $(document).ready(function() {
             // form now. Also show the "processing" spinner, and set the
             // target to the page, not the dialog box.
             $('img#processing').show();
-            $('form#wizard_steps').attr('target','_top');
+            if ( $('input[name="asset_id"]').val() )
+                $('form#wizard_steps').attr('target','_top');
             $('#wizard_steps').submit();
         }
         return false;

@@ -12,7 +12,7 @@ applications:
         menus: $StructuredContentWizard::StructuredContentWizard::CMS::update_menus
         methods:
             start_scw: $StructuredContentWizard::StructuredContentWizard::CMS::start
-            save_scw: $StructuredContentWizard::StructuredContentWizard::CMS::save
+            save_scw:  $StructuredContentWizard::StructuredContentWizard::CMS::save
 
 object_types:
     asset.structured_content: MT::Asset::StructuredContent
@@ -20,4 +20,10 @@ object_types:
 init_app: $StructuredContentWizard::StructuredContentWizard::CMS::init_app
 
 callbacks:
-    template_param.edit_asset: $StructuredContentWizard::StructuredContentWizard::CMS::xfrm_edit_asset
+    template_param.edit_asset:       $StructuredContentWizard::StructuredContentWizard::CMS::xfrm_edit_asset
+    template_param.edit_entry:       $StructuredContentWizard::StructuredContentWizard::CMS::xfrm_edit_entry
+    template_param.archetype_editor: $StructuredContentWizard::StructuredContentWizard::CMS::xfrm_editor
+    template_param.asset_list:       $StructuredContentWizard::StructuredContentWizard::CMS::xfrm_asset_list
+
+skip_static:
+    - .psd

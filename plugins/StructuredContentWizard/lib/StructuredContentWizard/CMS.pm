@@ -105,6 +105,10 @@ sub start {
         $param->{asset_id} = $app->param('id');
     }
     
+    # This is used to track whether to insert the asset into an entry
+    # immediately after completion. It is invoked by clicking the "Create
+    # Structured Content" toolbar button and creating an asset through there.
+    $param->{entry_insert} = $app->param('entry_insert');
     
     # To get started, a wizard must be selected. If many wizards are
     # available, let the user pick which to use. If only one, set it as the
@@ -122,7 +126,7 @@ sub start {
             return $app->load_tmpl('wizard_select.mtml', $param);
         }
     }
-    
+
     # At this point we have a valid wizard selected. Use it to build the
     # pages of options.
     $param->{wizard_id} = $app->param('wizard_id');
@@ -225,6 +229,8 @@ sub save {
     # gets to MT's File Options page.
     $asset->label(       $app->param('wizard_label') );
     $asset->description( "Structured Content"        );
+    # The complete_insert dialog uses the file name field as the default "label".
+    $asset->file_name(   $app->param('wizard_label') );
     $asset->wizard_id(   $wizard_id                  );
     $asset->yaml(        $yaml->write_string()       );
     $asset->blog_id(     $app->blog->id              );
@@ -644,6 +650,7 @@ sub _load_tags {
 }
 
 sub xfrm_edit_asset {
+    # Add the "edit this asset in the wizard" link to the Edit Asset screen.
     my ($cb, $app, $param, $tmpl) = @_;
 
     # Give up if this isn't a structured content asset.
@@ -665,6 +672,99 @@ HTML
     my $old = q{<div class="asset-embed">};
     my $new = q{<div class="asset-embed hidden">};
     $tmpl_text =~ s/$old/$new/;
+
+    # Now push the updated template back into the context. All done!
+    $tmpl->text( $tmpl_text );
+}
+
+sub xfrm_edit_entry {
+    # Add the Structured Content toolbar button's CSS
+    my ($cb, $app, $param, $tmpl) = @_;
+
+    # If no structured content wizard has been defined for this blog, just
+    # give up.
+    return unless MT->registry(
+        'template_sets', 
+        $app->blog->template_set, 
+        'structured_content_wizards'
+    );
+
+    # Grab the template itself, which we'll use to update the links.
+    my $tmpl_text = $tmpl->text;
+
+    my $css = <<'CSS';
+<mt:SetVarBlock name="html_head" append="1">
+<style type="text/css">
+    a.button.command-insert-structured_content {
+        background-image: url(<mt:PluginStaticWebPath component="StructuredContentWizard">images/toolbar-buttons.png);
+    }
+    a.button.command-insert-structured_content:hover {
+        background-image: url(<mt:PluginStaticWebPath component="StructuredContentWizard">images/toolbar-buttons.png);
+        background-position: -22px 0;
+    }
+    a.button.command-insert-structured_content:active {
+        background-image: url(<mt:PluginStaticWebPath component="StructuredContentWizard">images/toolbar-buttons.png);
+        background-position: -44px 0;
+    }
+</style>
+</mt:SetVarBlock>
+CSS
+
+    # Add the CSS update to the template.
+    $tmpl->text( $css.$tmpl_text );
+}
+
+sub xfrm_editor {
+    # Add the Structured Content toolbar button to the editor
+    my ($cb, $app, $param, $tmpl) = @_;
+
+    # If no structured content wizard has been defined for this blog, just
+    # give up.
+    return unless MT->registry(
+        'template_sets', 
+        $app->blog->template_set, 
+        'structured_content_wizards'
+    );
+
+    # Grab the template itself, which we'll use to update the links.
+    my $tmpl_text = $tmpl->text;
+
+    # Find the Insert File icon in the toolbar
+    my $old = q{<a href="javascript: void 0;" title="<__trans phrase="Insert File" escape="html">" mt:command="open-dialog" mt:dialog-params="__mode=list_assets&amp;_type=asset&amp;edit_field=<mt:var name="toolbar_edit_field">&amp;blog_id=<mt:var name="blog_id">&amp;dialog_view=1" class="command-insert-file toolbar button"><b>Insert File</b><s></s></a>};
+    # Create an Insert Structured Content icon for the toolbar
+    my $new = q{<a href="javascript: void 0;" title="<__trans phrase="Insert Structured Content" escape="html">" mt:command="open-dialog" mt:dialog-params="__mode=list_assets&amp;_type=asset&amp;edit_field=<mt:var name="toolbar_edit_field">&amp;blog_id=<mt:var name="blog_id">&amp;dialog_view=1&amp;filter=class&amp;filter_val=structured_content" class="command-insert-structured_content toolbar button"><b>Insert Structured Content</b><s></s></a>};
+
+    $tmpl_text =~ s/$old/$new$old/;
+
+    # Now push the updated template back into the context. All done!
+    $tmpl->text( $tmpl_text );
+}
+
+sub xfrm_asset_list {
+    # After clicking the Structured Content toolbar button the asset list
+    # pops up. Remove the "Upload..." link and add a "Create a new
+    # Structured Content asset" link.
+    my ($cb, $app, $param, $tmpl) = @_;
+
+    # Give up if this isn't a structured content asset.
+    return unless ($app->param('filter_val') eq 'structured_content');
+
+    # Grab the template itself, which we'll use to update the links.
+    my $tmpl_text = $tmpl->text;
+
+    # Add the "Create Structured Content Asset" link to the dialog
+    my $old = q{<div class="panel-header">};
+    my $new = <<'HTML';
+<img src="<mt:var name="static_uri">images/status_icons/create.gif" alt="<__trans phrase="Create New Structured Content Asset">" width="9" height="9" />
+<a href="<mt:var name="script_url">?__mode=start_scw&amp;blog_id=<mt:BlogID>&amp;dialog_view=1&amp;entry_insert=1&amp;edit_field=<mt:var name="edit_field">&amp;return_args=<mt:var name="return_args" escape="url">"><__trans phrase="Create New Structured Content Asset"></a>
+HTML
+
+    $tmpl_text =~ s/$old/$new$old/;
+    
+    # Remove the "Upload..." option from the dialog, because it doesn't make sense in this context.
+    $old = q{<mt:var name="upload_new_file_link">};
+    $new = '';
+    $tmpl_text =~ s/$old/$new/g;
 
     # Now push the updated template back into the context. All done!
     $tmpl->text( $tmpl_text );
