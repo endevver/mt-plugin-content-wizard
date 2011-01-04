@@ -1,11 +1,15 @@
 # Structured Content Wizard Overview
 
-The Structured Content Wizard plugin for Movable Type and Melody makes structured blogging and creating form-based content easy!
+The Structured Content Wizard plugin for Movable Type and Melody makes structured blogging and creating form-based content easy! Simply create a step-by-step wizard interface for authors to work with.
 
-Simply create a step-by-step wizard interface for authors to work with. Easily define your wizard with a YAML structure (no programming necessary!) in your theme, and specify a template to output your content into. The result is saved as an Asset that you can insert into an Entry or Page, for example.
+* Easily define your wizard with a YAML structure in your theme (no programming necessary)!
+* Define many unique wizards in a single theme.
+* Each step of the wizard interface can have any number and type of fields to suit your requirements.
+* Create a custom template to output wizard content exactly as needed.
+* Wizard content is saved as an Asset that you can insert into an Entry or Page, for example.
+* Edit content through the same wizard interface where it was created.
 
-Many wizards can be defined within a single theme. So, for example, you can have both a Newsletter and a DVD Review wizard, each uniquely set up to match that type of content. Each step of the wizard interface can have any number and type of fields to suit your requirements.
-
+Wizards are defined as part of a theme and build off of Config Assistant's existing simple field definition capabilities. Developers familiar with creating Theme Options or Plugin Options with Config Assistant will be right at home with the Structured Content Wizard and will have a working wizard completed in no time!
 
 # Prerequisites
 
@@ -153,7 +157,7 @@ The tags defined in your wizard's fields can be used in any template within the 
     </mt:Assets>
 
 
-# Use a Wizard
+# Using a Wizard
 
 ## Creating Structured Content
 
