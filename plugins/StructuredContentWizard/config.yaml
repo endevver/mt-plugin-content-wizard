@@ -3,7 +3,7 @@ id: StructuredContentWizard
 description: 'Structured blogging is a way to create content by following rules. The Structured Content Wizard will help you define those rules and create a workflow that makes it easy to follow them.'
 author_name: Endevver
 author_link: http://endevver
-version: 1.0.1
+version: 1.0.2
 schema_version: 1
 static_version: 2
 

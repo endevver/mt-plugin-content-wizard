@@ -33,9 +33,10 @@ sub update_menus {
                 my $blog = $app->blog;
                 return 0 if !$blog;
                 my $plugin = MT->component('StructuredContentWizard');
-                return if !$plugin;
+                return 0 if !$plugin;
                 # If any wizards were defined, show the menu item.
                 my $ts_id   = $blog->template_set;
+                return 0 if !$ts_id;
                 return 1 if MT->registry('template_sets', $ts_id, 'structured_content_wizards');
                 return 0;
             },
@@ -669,8 +670,8 @@ HTML
 
     # Remove the "Embed Asset" link (since it's useless for structured
     # content).
-    my $old = q{<div class="asset-embed">};
-    my $new = q{<div class="asset-embed hidden">};
+    $old = q{<div class="asset-embed">};
+    $new = q{<div class="asset-embed hidden">};
     $tmpl_text =~ s/$old/$new/;
 
     # Now push the updated template back into the context. All done!
@@ -747,7 +748,8 @@ sub xfrm_asset_list {
     my ($cb, $app, $param, $tmpl) = @_;
 
     # Give up if this isn't a structured content asset.
-    return unless ($app->param('filter_val') eq 'structured_content');
+    return unless $app->param('filter_val') 
+        && $app->param('filter_val') eq 'structured_content';
 
     # Grab the template itself, which we'll use to update the links.
     my $tmpl_text = $tmpl->text;
