@@ -403,6 +403,8 @@ sub _build_wizard_options {
             else {
                 MT->log(
                     {
+                        level   => MT::Log::ERROR(),
+                        blog_id => $app->blog->id,
                         message => 'Structured Content Wizard encountered '
                             . 'an unknown config type: ' . $field->{'type'}
                     }
