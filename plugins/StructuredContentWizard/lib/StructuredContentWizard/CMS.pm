@@ -352,12 +352,13 @@ sub _build_wizard_options {
                 # If the user didn't fill in all values, they may have to go
                 # back and correct that. So, capture the previously set field
                 # info and use that. Alternatively, the user may be editing a
-                # previously-created asset, so we want to present all saved
-                # data. If neither of those is true, display the YAML-supplied
-                # default value, then just fall back to a blank field.
+                # previously-created asset (with $yaml), so we want to present
+                # all saved data. If neither of those is true, display the 
+                # YAML-supplied default value, then just fall back to a blank
+                # field.
                 my $value = 
                     $app->param($field_id) 
-                    || $yaml->{$wizard_id}->{ $field->{tag} } 
+                    || ( $yaml && $yaml->{$wizard_id}->{ $field->{tag} } )
                     || $field->{default} 
                     || ''; 
 
