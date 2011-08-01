@@ -303,10 +303,7 @@ sub _build_wizard_options {
 
     # Look at each defined Step. Each Step will have it's own "page" to help
     # organize the Wizard into something easy to walk through.
-    foreach my $step_name (
-        sort { ( $steps->{$a} ) <=> ( $steps->{$b} ) } keys %{$steps}
-      )
-    {
+    foreach my $step_name ( sort keys %{$steps} ) {
         my $step = $steps->{$step_name};
         my $label = $step->{label} ne '' ? &{$step->{label}} : '';
 
@@ -321,12 +318,12 @@ sub _build_wizard_options {
           )
         {
             my $field = $fields->{$optname};
-            
+
             # The $field_id needs to be unique, but something we can grab on
             # to when saving. Prepending the $wizard_id should be a good way
             # to do this.
             my $field_id = $wizard_id . '_' . $optname;
-            
+
             if ( $field->{'type'} eq 'separator' ) {
                 # The separator "type" is handled specially here because it's not
                 # really a "config type"-- it isn't editable and no data is saved
