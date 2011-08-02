@@ -207,11 +207,12 @@ this, for example:
 
 ## Creating Structured Content
 
-If a wizard has been defined for your blog/theme, you will have a Structured
-Content option in the Create menu. Select that option to get started.
-Alternatively, if you are editing an entry you will see a new Insert
-Structured Content button in the editor toolbar; click the toolbar button and
-select Create Structured Content Asset to get started.
+If a wizard has been defined for your blog/theme, you will have additional
+options in the Create menu naming the available structured content wizards.
+Select the wizard from the menu to get started. Alternatively, if you are
+editing an entry you will see a new Insert Structured Content button in the
+editor toolbar; click the toolbar button and select Create Structured Content
+Asset to get started.
 
 If more than one wizard has been defined for a given theme, authors will have
 opportunity to select which wizard they want to work with. Make the

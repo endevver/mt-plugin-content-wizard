@@ -17,31 +17,56 @@ sub init_app {
     $r->{tags} = sub { _load_tags( $app, $plugin ) };
 }
 
+# Add the Structured Content Wizard menu items only if wizards are defined for
+# this blog.
 sub update_menus {
-    # Add the Structured Content Wizard menu items only if the Structured
-    # Content Wizrd is enabled on this blog.
-    return {
-        'create:structured_content' => {
-            label      => 'Structured Content',
-            # The 300's seem to be asset-related stuff, so just push the
-            # menu option there to match other things.
-            order      => '310',
-            dialog     => 'start_scw',
-            view       => 'blog',
-            condition  => sub {
-                my $app = MT->instance;
-                my $blog = $app->blog;
-                return 0 if !$blog;
-                my $plugin = MT->component('StructuredContentWizard');
-                return 0 if !$plugin;
-                # If any wizards were defined, show the menu item.
-                my $ts_id   = $blog->template_set;
-                return 0 if !$ts_id;
-                return 1 if MT->registry('template_sets', $ts_id, 'structured_content_wizards');
-                return 0;
-            },
-        },
-    };
+    my $app = MT->instance;
+    my $menu = {};
+
+    # Wizards only exist as part of a theme, which means they only exist at 
+    # the blog level.
+    return {} if !$app->blog;
+
+    # Grab any wizards that were defined.
+    my $wizards = MT->registry(
+        'template_sets', 
+        $app->blog->template_set, 
+        'structured_content_wizards'
+    );
+
+    # Proceed in creating the menu if any wizards were found in this blog.
+    if ($wizards) {
+
+        # The 300's seem to be asset-related stuff, so just push the
+        # menu options there to match other things.
+        my $order = 310;
+
+        # Sort the wizards according to the order key. Then build the menu 
+        # items for the wizards.
+        foreach my $wizard ( 
+            sort { 
+                ($wizards->{$a}->{order} || '0') <=> ($wizards->{$b}->{order} || '0') 
+            } keys %{$wizards} 
+        ) {
+            
+            # The menu name is kept unique with the wizard key. Use the wizard
+            # label for the menu item name, though provide a fallback.
+            $menu->{'create:structured_content_' . $wizard} = {
+                label  => ($wizards->{$wizard}->{label} || 'Unnamed Wizard'),
+                order  => $order,
+                dialog => 'start_scw',
+                # dialogs can't pass arguments in, so we need to hack it to 
+                # use return_args. Over in start_scw, return_args is searched
+                # for a wizard_id.
+                return_args => "wizard_id=$wizard",
+                view   => 'blog',
+            };
+            
+            $order++;
+        }
+    }
+
+    return $menu;
 }
 
 sub _load_scw_yaml {
@@ -70,19 +95,37 @@ sub _load_scw_yaml {
     }
 }
 
+# The user wants to create some structured content. First we give them
+# the chance to select which wizard to use (if more than one wizard
+# exists), then we create the "steps" for the wizard based on how it
+# was defined.
 sub start {
-    # The user wants to create some structured content. First we give them
-    # the chance to select which wizard to use (if more than one wizard
-    # exists), then we create the "steps" for the wizard based on how it
-    # was defined.
-    my $app    = MT->instance;
+    my $app = MT->instance;
 
     # Just give up if, for some reason, this isn't a valid blog.
     return unless $app->can('blog');
 
+    # If the wizard_id is not set as a parameter yet, grab the return_args 
+    # and search that for a wizard_id.
+    if ( !$app->param('wizard_id') ) {
+        my $return_args = $app->return_args;
+
+        # If the wizard_id can't be found in the return_args, just skip this.
+        # This may happen if hitting the Structured Content asset inserter
+        # in the entry editor. Just present the Select a Wizard screen if no
+        # wizard_id is found.
+        if ( $return_args =~ s/wizard_id=(.*)[&]?/$1/ ) {
+
+            # Add the wizard_id param based on the extracted wizard name. Now
+            # SCW will start at this wizard.
+            $app->param('wizard_id', $return_args);
+            
+        }
+    }
+
     my $param  = {};
     my $plugin = MT->component('StructuredContentWizard');
-    
+
     # If the user is trying to edit an existing SCW asset, we need to use the
     # supplied ID to figure out which wizard they are using.
     my ($asset, $yaml);
