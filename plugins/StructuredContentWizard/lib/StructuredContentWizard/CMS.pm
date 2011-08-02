@@ -650,8 +650,8 @@ sub _load_tags {
     return $tags;
 }
 
+# Add the "edit this asset in the wizard" link to the Edit Asset screen.
 sub xfrm_edit_asset {
-    # Add the "edit this asset in the wizard" link to the Edit Asset screen.
     my ($cb, $app, $param, $tmpl) = @_;
 
     # Give up if this isn't a structured content asset.
@@ -676,47 +676,12 @@ HTML
 
     # Now push the updated template back into the context. All done!
     $tmpl->text( $tmpl_text );
+
+    1; # Callbacks should always return true.
 }
 
-sub xfrm_edit_entry {
-    # Add the Structured Content toolbar button's CSS
-    my ($cb, $app, $param, $tmpl) = @_;
-
-    # If no structured content wizard has been defined for this blog, just
-    # give up.
-    return unless MT->registry(
-        'template_sets', 
-        $app->blog->template_set, 
-        'structured_content_wizards'
-    );
-
-    # Grab the template itself, which we'll use to update the links.
-    my $tmpl_text = $tmpl->text;
-
-    my $css = <<'CSS';
-<mt:SetVarBlock name="html_head" append="1">
-<style type="text/css">
-    a.button.command-insert-structured_content {
-        background-image: url(<mt:PluginStaticWebPath component="StructuredContentWizard">images/toolbar-buttons.png);
-    }
-    a.button.command-insert-structured_content:hover {
-        background-image: url(<mt:PluginStaticWebPath component="StructuredContentWizard">images/toolbar-buttons.png);
-        background-position: -22px 0;
-    }
-    a.button.command-insert-structured_content:active {
-        background-image: url(<mt:PluginStaticWebPath component="StructuredContentWizard">images/toolbar-buttons.png);
-        background-position: -44px 0;
-    }
-</style>
-</mt:SetVarBlock>
-CSS
-
-    # Add the CSS update to the template.
-    $tmpl->text( $css.$tmpl_text );
-}
-
+# Add the Structured Content toolbar button to the editor
 sub xfrm_editor {
-    # Add the Structured Content toolbar button to the editor
     my ($cb, $app, $param, $tmpl) = @_;
 
     # If no structured content wizard has been defined for this blog, just
@@ -732,19 +697,44 @@ sub xfrm_editor {
 
     # Find the Insert File icon in the toolbar
     my $old = q{<a href="javascript: void 0;" title="<__trans phrase="Insert File" escape="html">" mt:command="open-dialog" mt:dialog-params="__mode=list_assets&amp;_type=asset&amp;edit_field=<mt:var name="toolbar_edit_field">&amp;blog_id=<mt:var name="blog_id">&amp;dialog_view=1" class="command-insert-file toolbar button"><b>Insert File</b><s></s></a>};
+
     # Create an Insert Structured Content icon for the toolbar
-    my $new = q{<a href="javascript: void 0;" title="<__trans phrase="Insert Structured Content" escape="html">" mt:command="open-dialog" mt:dialog-params="__mode=list_assets&amp;_type=asset&amp;edit_field=<mt:var name="toolbar_edit_field">&amp;blog_id=<mt:var name="blog_id">&amp;dialog_view=1&amp;filter=class&amp;filter_val=structured_content" class="command-insert-structured_content toolbar button"><b>Insert Structured Content</b><s></s></a>};
+    my $new = <<'HTML';
+<a href="javascript: void 0;" 
+    title="<__trans phrase="Insert Structured Content" escape="html">" 
+    mt:command="open-dialog" 
+    mt:dialog-params="__mode=list_assets&amp;_type=asset&amp;edit_field=<mt:var name="toolbar_edit_field">&amp;blog_id=<mt:var name="blog_id">&amp;dialog_view=1&amp;filter=class&amp;filter_val=structured_content" 
+    class="command-insert-structured_content toolbar button">
+        <b>Insert Structured Content</b><s></s>
+    </a>
+
+<style type="text/css">
+    a.button.command-insert-structured_content {
+        background-image: url(<mt:PluginStaticWebPath component="structuredcontentwizard">images/toolbar-buttons.png);
+    }
+    a.button.command-insert-structured_content:hover {
+        background-image: url(<mt:PluginStaticWebPath component="structuredcontentwizard">images/toolbar-buttons.png);
+        background-position: -22px 0;
+    }
+    a.button.command-insert-structured_content:active {
+        background-image: url(<mt:PluginStaticWebPath component="structuredcontentwizard">images/toolbar-buttons.png);
+        background-position: -44px 0;
+    }
+</style>
+HTML
 
     $tmpl_text =~ s/$old/$new$old/;
 
     # Now push the updated template back into the context. All done!
     $tmpl->text( $tmpl_text );
+
+    1; # Callbacks should always return true.
 }
 
+# After clicking the Structured Content toolbar button the asset list
+# pops up. Remove the "Upload..." link and add a "Create a new
+# Structured Content asset" link.
 sub xfrm_asset_list {
-    # After clicking the Structured Content toolbar button the asset list
-    # pops up. Remove the "Upload..." link and add a "Create a new
-    # Structured Content asset" link.
     my ($cb, $app, $param, $tmpl) = @_;
 
     # Give up if this isn't a structured content asset.
@@ -770,6 +760,8 @@ HTML
 
     # Now push the updated template back into the context. All done!
     $tmpl->text( $tmpl_text );
+
+    1; # Callbacks should always return true.
 }
 
 1;
