@@ -52,14 +52,48 @@ sub update_menus {
             # The menu name is kept unique with the wizard key. Use the wizard
             # label for the menu item name, though provide a fallback.
             $menu->{'create:structured_content_' . $wizard} = {
-                label  => ($wizards->{$wizard}->{label} || 'Unnamed Wizard'),
-                order  => $order,
-                dialog => 'start_scw',
+                label       => ($wizards->{$wizard}->{label} || $wizard),
+                order       => $order,
+                dialog      => 'start_scw',
                 # dialogs can't pass arguments in, so we need to hack it to 
                 # use return_args. Over in start_scw, return_args is searched
                 # for a wizard_id.
                 return_args => "wizard_id=$wizard",
-                view   => 'blog',
+                view        => 'blog',
+                condition   => sub {
+                    my $app = MT->instance;
+
+                    # Look for any role requirements assigned to this wizard.
+                    # Check for "roles" or "role" because mixing them up is easy.
+                    my $roles = $wizards->{$wizard}->{roles}
+                        || $wizards->{$wizard}->{role}
+                        || '';
+
+                    foreach my $role_name ( split(/\s*,\s*/, $roles) ) {
+                        my $role = MT->model('role')->load({ name => $role_name })
+                            or return 0;
+
+                        my $exists = MT->model('association')->exist({
+                            blog_id   => $app->blog->id,
+                            author_id => $app->user->id,
+                            role_id   => $role->id,
+                        });
+
+                        # A system administrator may not specifically have a
+                        # user-role-blog association set up, but as a system
+                        # administrator they should have permission to get at
+                        # the wizards.
+                        if ( $app->user->is_superuser ) {
+                            $exists = 1;
+                        }
+                        
+                        # The user does not have permission to access this
+                        # wizard.
+                        return 0 if !$exists;
+                    }
+
+                    return 1; # Display the wizard for all users.
+                },
             };
             
             $order++;

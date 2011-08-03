@@ -51,6 +51,7 @@ follows is an example wizard, with explanation below.
             structured_content_wizards:
                 newsletter:
                     label: 'Our Awesome Newsletter Wizard'
+                    role: 'Blog Administrator'
                     asset_output_template: newsletter_wizard
                     order: 1
                     steps:
@@ -109,6 +110,8 @@ The wizard being defined here is `newsletter`. Inside of the `newsletter`
 wizard are a few properties:
 
 * `label` - a friendly name for the wizard.
+* `role` - optionally include a comma-separated list of Roles with permission
+  to use a specific wizard.
 * `asset_output_template` - specify a template module to be used to output
   your structured content asset when inserted into an Entry or Page. Either a
   template identifier or template name are valid here.
