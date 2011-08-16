@@ -742,6 +742,26 @@ sub xfrm_edit_asset {
     # Give up if this isn't a structured content asset.
     return unless ($param->{asset}->class eq 'structured_content');
 
+    # Load the wizard so that we can get at some important pieces.
+    my $scw_yaml  = _load_scw_yaml( $app->blog->template_set );
+    my $wizard_id = $param->{asset}->wizard_id;
+
+    # Render the output template and return the result to the user.
+    my $output_tmpl = MT->model('template')->load({
+        blog_id    => $app->blog->id,
+        identifier => $scw_yaml->{$wizard_id}->{asset_output_template},
+    })
+        or die 'The asset output template for this wizard could not be found.';
+
+    require MT::Template::Context;
+    my $ctx = MT::Template::Context->new;
+    $ctx->stash('asset', $param->{asset});
+    my $rendered_tmpl = $output_tmpl->build($ctx) or die $output_tmpl->errstr;
+
+    # Put the rendered template HTML into the params hash so that it's 
+    # available as a variable to display, below.
+    $param->{rendered_tmpl} = $rendered_tmpl;
+
     # Grab the template itself, which we'll use to update the links.
     my $tmpl_text = $tmpl->text;
 
@@ -749,9 +769,15 @@ sub xfrm_edit_asset {
     # and add a link to open the wizard and edit the asset there.
     my $old = q{<a href="<mt:var name="url" escape="html">"><__trans phrase="View Asset"></a>};
     my $new = <<'HTML';
-<a href="<mt:Var name="script_uri">?__mode=start_scw&amp;blog_id=<mt:BlogID>&amp;id=<mt:Var name="id">&amp;return_args=__mode%3Dview%26_type%3Dasset%26blog_id%3D<mt:BlogID>%26id%3D<mt:Var name="id">')">
-    <__trans phrase="Edit this asset in the wizard">
-</a>
+<p>
+    <a href="<mt:Var name="script_uri">?__mode=start_scw&amp;blog_id=<mt:BlogID>&amp;id=<mt:Var name="id">&amp;return_args=__mode%3Dview%26_type%3Dasset%26blog_id%3D<mt:BlogID>%26id%3D<mt:Var name="id">')">
+        <__trans phrase="Edit this asset in the wizard">
+    </a><br />
+    <a href="javascript:void(0)" onclick="toggle('rendered-template');">View this asset rendered in its template</a>
+</p>
+<div id="rendered-template" class="textarea-wrapper hidden">
+    <textarea class="full-width" style="height: 100px;"><mt:Var name="rendered_tmpl"></textarea>
+</div>
 HTML
     $tmpl_text =~ s/$old/$new/;
 
