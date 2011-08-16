@@ -53,6 +53,8 @@ follows is an example wizard, with explanation below.
                     label: 'Our Awesome Newsletter Wizard'
                     role: 'Blog Administrator'
                     asset_output_template: newsletter_wizard
+                    asset_label_field: NewsletterTitle
+                    wizard_complete_text: "Below you'll see your wizard rendered into its template."
                     order: 1
                     steps:
                         step1:
@@ -115,6 +117,13 @@ wizard are a few properties:
 * `asset_output_template` - specify a template module to be used to output
   your structured content asset when inserted into an Entry or Page. Either a
   template identifier or template name are valid here.
+* `asset_label_field` - structured content wizards are saved as assets. Use 
+  this optional field to allow for a user-definable asset label by specifying
+  the template tag of a field used in this wizard. In the example above, the
+  `asset_label_field` is set to use the tag `NewsletterTitle`, which means
+  the contents of that field will be used as the asset label.
+* `wizard_complete_text` - optionally supply some text (instructions, perhaps)
+  to users at the end of the wizard, after the new asset has been saved.
 * `order` - if more than one wizard is defined, specify the order they should
   appear in with this key and integer values. This is useful if one wizard is
   most-used because on the Select a Wizard screen the first wizard is
@@ -227,9 +236,8 @@ in that field to continue to the next step. Freely jump to the next and
 previous steps to complete fields.
 
 At the last step, click Complete Wizard. The contents of the submitted fields
-are saved as a new asset, and the familiar Asset Insert dialog is presented:
-enter a name, description, and tags for this asset (if desired) and select to
-insert this asset into a new entry.
+are saved as a new asset, the rendered output template module is returned to
+the user, along with the contents of the `wizard_complete_text` key.
 
 ## Inserting Structured Content
 
