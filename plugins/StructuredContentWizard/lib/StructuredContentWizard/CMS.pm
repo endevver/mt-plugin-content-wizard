@@ -54,11 +54,10 @@ sub update_menus {
             $menu->{'create:structured_content_' . $wizard} = {
                 label       => ($wizards->{$wizard}->{label} || $wizard),
                 order       => $order,
-                dialog      => 'start_scw',
-                # dialogs can't pass arguments in, so we need to hack it to 
-                # use return_args. Over in start_scw, return_args is searched
-                # for a wizard_id.
-                return_args => "wizard_id=$wizard",
+                mode => 'start_scw',
+                args => {
+                    wizard_id => $wizard,
+                },
                 view        => 'blog',
                 condition   => sub {
                     my $app = MT->instance;
@@ -139,24 +138,6 @@ sub start {
     # Just give up if, for some reason, this isn't a valid blog.
     return unless $app->can('blog');
 
-    # If the wizard_id is not set as a parameter yet, grab the return_args 
-    # and search that for a wizard_id.
-    if ( !$app->param('wizard_id') ) {
-        my $return_args = $app->return_args;
-
-        # If the wizard_id can't be found in the return_args, just skip this.
-        # This may happen if hitting the Structured Content asset inserter
-        # in the entry editor. Just present the Select a Wizard screen if no
-        # wizard_id is found.
-        if ( $return_args =~ s/wizard_id=(.*)[&]?/$1/ ) {
-
-            # Add the wizard_id param based on the extracted wizard name. Now
-            # SCW will start at this wizard.
-            $app->param('wizard_id', $return_args);
-            
-        }
-    }
-
     my $param  = {};
     my $plugin = MT->component('StructuredContentWizard');
 
@@ -222,10 +203,10 @@ sub start {
     return $app->load_tmpl('wizard_steps.mtml', $param);
 }
 
+# Save the submitted wizard content. When saving, the wizard content is
+# "poured" into the specified template. That template is then saved as a
+# new Asset, which a user can insert into an entry.
 sub save {
-    # Save the submitted wizard content. When saving, the wizard content is
-    # "poured" into the specified template. That template is then saved as a
-    # new Asset, which a user can insert into an entry.
     my $app = MT->instance;
 
     # Refer to the wizard's YAML/registry entry to find all of the fields
@@ -236,18 +217,22 @@ sub save {
     my $scw_yaml  = _load_scw_yaml($ts_id);
     my $steps     = $scw_yaml->{$wizard_id}->{steps};
     my $data = {};
+
     # Go through each defined step. We don't really need to do anything here
     # because the fields are what we're really interestd in.
     foreach my $step_name ( keys %{$steps} ) {
         my $step   = $steps->{$step_name};
         my $fields = $step->{fields};
+
         # Now for each field, get the entered value and set it.
         foreach my $optname ( keys %{$fields} ) {
+
             # Check that a tag has been defined, because we use the tag name
             # as the YAML key.
             if ( $fields->{$optname}->{tag} ) {
                 my $opt = StructuredContentWizard::Util::find_field_def($app, $optname, $wizard_id);
                 my $field_id = $wizard_id . '_' . $optname;
+
                 # If this is a file upload, it needs some special handling.
                 if ($opt->{type} eq 'file') {
                     my $result = process_file_upload(
@@ -266,6 +251,7 @@ sub save {
                     # that is can be used later.
                     $data->{ $fields->{$optname}->{tag} } = $result->{asset}->{id};
                 }
+                # Just save the value specified in the field.
                 else {
                     my $value = $app->param($field_id);
                     $data->{ $fields->{$optname}->{tag} } = $value;
@@ -273,6 +259,7 @@ sub save {
             }
         }
     }
+
     # Create the YAML entry to save the data.
     my $yaml = YAML::Tiny->new;
     $yaml->[0]->{$wizard_id} = $data;
@@ -281,12 +268,14 @@ sub save {
     # create a new asset.
     my $asset;
     if ( $app->param('asset_id') ) {
+
         # This SCW asset is being edited. Load the saved asset and update it.
         $asset = MT->model('asset')->load( $app->param('asset_id') )
             or return $app->errstr;
         $asset->yaml( $yaml->write_string() );
         $asset->modified_by( $app->user->id );
         $asset->save;
+
         # The asset has been saved. Now just redirect to the Edit Asset page.
         return $app->redirect(
             $app->uri(
@@ -300,27 +289,46 @@ sub save {
         );
     }
 
+    # Build the asset label. If an asset_label_field was specified in the 
+    # wizard YAML, use it. Otherwise, fall back to the wizard label.
+    my $asset_label = $data->{ $scw_yaml->{$wizard_id}->{asset_label_field} }
+        ? $data->{ $scw_yaml->{$wizard_id}->{asset_label_field} }
+        : $app->param('wizard_label');
+
     # Create a new asset and save the YAML structure
     use MT::Asset::StructuredContent;
     $asset = MT::Asset::StructuredContent->new;
-    # The asset label and description can be overriden when the user
-    # gets to MT's File Options page.
-    $asset->label(       $app->param('wizard_label') );
-    $asset->description( "Structured Content"        );
-    # The complete_insert dialog uses the file name field as the default "label".
-    $asset->file_name(   $app->param('wizard_label') );
-    $asset->wizard_id(   $wizard_id                  );
-    $asset->yaml(        $yaml->write_string()       );
-    $asset->blog_id(     $app->blog->id              );
-    $asset->created_by(  $app->user->id              );
-    $asset->save;
+    $asset->label(      $asset_label          );
+    $asset->wizard_id(  $wizard_id            );
+    $asset->yaml(       $yaml->write_string() );
+    $asset->blog_id(    $app->blog->id        );
+    $asset->created_by( $app->user->id        );
+    $asset->save or die $asset->errstr;
 
-    # Push the asset to MT's File Options page. Here the user can specify a
-    # label, description, and tags for the new asset, and also choose whether
-    # to insert it into a new entry.
-    return $app->complete_insert(
-        asset => $asset,
-    );
+    # Render the template and return the result to the user.
+    my $tmpl = MT->model('template')->load({
+        blog_id    => $app->blog->id,
+        identifier => $scw_yaml->{$wizard_id}->{asset_output_template},
+    })
+        or die 'The asset output template for this wizard could not be found.';
+
+    require MT::Template::Context;
+    my $ctx = MT::Template::Context->new;
+    $ctx->stash('asset', $asset);
+    my $html = $tmpl->build($ctx) or die $tmpl->errstr;
+
+    # Now that the template has been rendered, insert the result into the 
+    # Wizard Complete page for the user to see.
+    return $app->load_tmpl( 
+        'wizard_complete.mtml', 
+        {
+            wizard_label      => $app->param('wizard_label'),
+            asset_id          => $asset->id,
+            asset_label       => $asset->label,
+            complete_text     => $scw_yaml->{$wizard_id}->{wizard_complete_text} || '',
+            rendered_template => $html,
+        }
+    )
 }
 
 sub _select_wizard {
@@ -741,7 +749,9 @@ sub xfrm_edit_asset {
     # and add a link to open the wizard and edit the asset there.
     my $old = q{<a href="<mt:var name="url" escape="html">"><__trans phrase="View Asset"></a>};
     my $new = <<'HTML';
-<a href="javascript:void(0)" onclick="return openDialog(false, 'start_scw', 'blog_id=<mt:BlogID>&amp;id=<mt:Var name="id">&amp;return_args=__mode%3Dview%26_type%3Dasset%26blog_id%3D<mt:BlogID>%26id%3D<mt:Var name="id">')"><__trans phrase="Edit this asset in the wizard"></a>
+<a href="<mt:Var name="script_uri">?__mode=start_scw&amp;blog_id=<mt:BlogID>&amp;id=<mt:Var name="id">&amp;return_args=__mode%3Dview%26_type%3Dasset%26blog_id%3D<mt:BlogID>%26id%3D<mt:Var name="id">')">
+    <__trans phrase="Edit this asset in the wizard">
+</a>
 HTML
     $tmpl_text =~ s/$old/$new/;
 
@@ -825,7 +835,7 @@ sub xfrm_asset_list {
     my $old = q{<div class="panel-header">};
     my $new = <<'HTML';
 <img src="<mt:var name="static_uri">images/status_icons/create.gif" alt="<__trans phrase="Create New Structured Content Asset">" width="9" height="9" />
-<a href="<mt:var name="script_url">?__mode=start_scw&amp;blog_id=<mt:BlogID>&amp;dialog_view=1&amp;entry_insert=1&amp;edit_field=<mt:var name="edit_field">&amp;return_args=<mt:var name="return_args" escape="url">"><__trans phrase="Create New Structured Content Asset"></a>
+<a href="<mt:var name="script_url">?__mode=start_scw&amp;blog_id=<mt:BlogID>&amp;dialog_view=1&amp;entry_insert=1&amp;edit_field=<mt:var name="edit_field">&amp;return_args=<mt:var name="return_args" escape="url">" target="_parent"><__trans phrase="Create New Structured Content Asset"></a>
 HTML
 
     $tmpl_text =~ s/$old/$new$old/;

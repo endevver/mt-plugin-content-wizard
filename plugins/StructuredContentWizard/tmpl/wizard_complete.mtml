@@ -1,0 +1,25 @@
+<mt:setvarblock name="page_title"><mt:Var name="wizard_label">: Complete</mt:setvarblock>
+
+<mt:Include name="include/header.tmpl">
+
+<form method="post" action="<mt:Var name="script_url">">
+
+    <p>
+        The wizard <mt:Var name="wizard_label"> has completed and saved a new 
+        asset, <a href="<mt:Var name="script_uri">?__mode=view&amp;_type=asset&amp;id=<mt:Var name="asset_id">&amp;blog_id=25"><mt:Var name="asset_label"></a>.
+    </p>
+<mt:If name="complete_text">
+    <mt:Var name="complete_text" filters="__default__">
+<mt:Else>
+    <p>
+        The following was rendered by this wizard's template:
+    </p>
+</mt:If>
+
+    <div class="textarea-wrapper">
+        <textarea class="full-width"><mt:Var name="rendered_template"></textarea>
+    </div>
+
+</form>
+
+<mt:Include name="include/footer.tmpl">

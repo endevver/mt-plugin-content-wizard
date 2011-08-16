@@ -1,5 +1,4 @@
 li.step {
-    max-height: 370px;
     overflow: auto;
 }
 
@@ -7,7 +6,7 @@ li.step {
     margin-bottom: 10px;
 }
 
-.field { width: 580px; }
+.field { width: 890px; }
 
 .required_missing {
     color: red;
@@ -22,6 +21,5 @@ li.step {
 
 img#processing {
     display: none;
-    float: right;
     padding: 5px 0 0 8px;
 }

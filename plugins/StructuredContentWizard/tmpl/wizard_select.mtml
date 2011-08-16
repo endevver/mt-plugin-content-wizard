@@ -1,6 +1,6 @@
 <mt:setvarblock name="page_title">Select a Wizard</mt:setvarblock>
 
-<mt:Include name="dialog/header.tmpl">
+<mt:Include name="include/header.tmpl">
 
 <form method="post" action="<mt:Var name="script_url">">
     <input type="hidden" name="__mode" value="start_scw" />
@@ -34,15 +34,9 @@
                 accesskey="x"
                 title="Start Wizard">Start Wizard</button>
         </mt:If>
-            <button
-                onclick="closeDialog(); return false"
-                type="submit"
-                class="close"
-                accesskey="x"
-                title="Close (x)">Close</button>
         </div>
     </div>
 
 </form>
 
-<mt:Include name="dialog/footer.tmpl">
+<mt:Include name="include/footer.tmpl">

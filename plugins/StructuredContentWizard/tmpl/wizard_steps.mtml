@@ -12,7 +12,7 @@
     <script src="<$mt:PluginStaticWebPath component="configassistant"$>js/jquery.json-2.2.min.js" type="text/javascript"></script>
 </mt:setvarblock>
 
-<mt:Include name="dialog/header.tmpl">
+<mt:Include name="include/header.tmpl">
 
 <form enctype="multipart/form-data" method="post" action="<mt:Var name="script_url">" id="wizard_steps">
     <input type="hidden" name="__mode" value="save_scw" />
@@ -29,15 +29,15 @@
     <mt:Loop name="steps_loop">
         <li id="step<mt:Var name="__counter__">" class="step panel">
             <div class="panel-header">
+                <div class="progress">Step <mt:Var name="__counter__"> of <mt:Var name="steps_count"></div>
                 <h2><mt:Var name="label"></h2>
                 <mt:If name="hint">
                 <div><mt:Var name="hint"></div>
                 </mt:If>
-                <div class="progress">Step <mt:Var name="__counter__"> of <mt:Var name="steps_count"></div>
             </div>
 
             <div class="msg msg-error hidden"></div>
-            
+
             <mt:If name="fields_loop">
                 <div class="fields">
                     <mt:Loop name="fields_loop">
@@ -56,11 +56,11 @@
         <div class="actions-bar-inner pkg actions">
             <img src="<mt:StaticWebPath>images/indicator.white.gif" width="16" height="16" id="processing" />
             <button
-                id="submit-wizard"
+                id="previous-step-button"
                 type="submit"
-                class="primary-button hidden"
-                accesskey="n"
-                title="Complete Wizard">Complete Wizard</button>
+                class="hidden"
+                accesskey="p"
+                title="Previous Step">Previous Step</button>
             <button
                 id="next-step-button"
                 type="submit"
@@ -68,20 +68,14 @@
                 accesskey="n"
                 title="Next Step">Next Step</button>
             <button
-                id="previous-step-button"
+                id="submit-wizard"
                 type="submit"
-                class="hidden"
-                accesskey="p"
-                title="Previous Step">Previous Step</button>
-            <button
-                onclick="closeDialog(); return false"
-                type="submit"
-                class="close"
-                accesskey="x"
-                title="Close (x)">Close</button>
+                class="primary-button hidden"
+                accesskey="n"
+                title="Complete Wizard">Complete Wizard</button>
         </div>
     </div>
 
 </form>
 
-<mt:Include name="dialog/footer.tmpl">
+<mt:Include name="include/footer.tmpl">
