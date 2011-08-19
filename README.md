@@ -55,6 +55,7 @@ follows is an example wizard, with explanation below.
                     asset_output_template: newsletter_wizard
                     asset_label_field: NewsletterTitle
                     wizard_complete_text: "Below you'll see your wizard rendered into its template."
+                    republish: main_index
                     order: 1
                     steps:
                         step1:
@@ -124,6 +125,8 @@ wizard are a few properties:
   the contents of that field will be used as the asset label.
 * `wizard_complete_text` - optionally supply some text (instructions, perhaps)
   to users at the end of the wizard, after the new asset has been saved.
+* `republish` - specify a comma-separated list of Index template identifiers
+  to be republished when the wizard is completed.
 * `order` - if more than one wizard is defined, specify the order they should
   appear in with this key and integer values. This is useful if one wizard is
   most-used because on the Select a Wizard screen the first wizard is

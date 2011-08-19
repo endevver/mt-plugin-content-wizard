@@ -317,6 +317,14 @@ sub save {
     $ctx->stash('asset', $asset);
     my $html = $tmpl->build($ctx) or die $tmpl->errstr;
 
+    # If the wizard has a `republish` key, some index template(s) are supposed
+    # to be republished when the wizard completes.
+    _republish_after_wizard_completed({
+        republish_key => $scw_yaml->{$wizard_id}->{republish},
+        wizard_id     => $wizard_id,
+        blog          => $app->blog,
+    });
+
     # Now that the template has been rendered, insert the result into the 
     # Wizard Complete page for the user to see.
     return $app->load_tmpl( 
@@ -505,6 +513,66 @@ sub _build_wizard_options {
     }
 
     return @steps_and_fields;
+}
+
+# If the wizard has a `republish` key, some index template(s) are supposed
+# to be republished when the wizard completes.
+sub _republish_after_wizard_completed {
+    my ($arg_ref) = @_;
+    my $blog          = $arg_ref->{blog};
+    my $wizard_id     = $arg_ref->{wizard_id};
+    my $republish_key = $arg_ref->{republish_key};
+
+    # Just give up if there are no templates to republish.
+    return if !$republish_key;
+
+    # Look at each template identifier supplied, load the template, and 
+    # republish.
+    my @tmpls = split(/\s*,\s*/, $republish_key);
+    foreach my $tmpl_identifier (@tmpls) {
+
+        my $tmpl = MT->model('template')->load({ 
+            blog_id    => $blog->id,
+            identifier => $tmpl_identifier,
+        });
+
+        # If the template couldn't be loaded, note it in the Activity Log and
+        # move on to the next template.
+        if (!$tmpl) {
+            MT->log({
+                blog_id => $blog->id,
+                level   => MT::Log::WARNING(),
+                message => "Structured Content Wizard could not find a "
+                    . "template with the identifier $tmpl_identifier for the "
+                    . "wizard $wizard_id.",
+            });
+            next;
+        }
+
+        my $result = MT->instance->rebuild_indexes(
+            Blog     => $blog,
+            Template => $tmpl,
+            Force    => 1,
+        );
+
+        # Report on the success/failure of the template republishing.
+        my ($message, $level);
+        if ($result) {
+            $message = "Structured Content Wizard is republishing the "
+                . "template " . $tmpl->name . " for the wizard $wizard_id.";
+            $level   = MT::Log::INFO();
+        }
+        else {
+            $message = "Structured Content Wizard could not republish the "
+                . "template " . $tmpl->name . " for the wizard $wizard_id.";
+            $level   = MT::Log::ERROR();
+        }
+        MT->log({
+            blog_id => $blog->id,
+            level   => $level,
+            message => $message,
+        });
+    }
 }
 
 # A good deal of this method was copied from the Config Assistant plugin
