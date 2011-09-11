@@ -34,7 +34,13 @@ $(document).ready(function() {
     
     // Hide and show the appropriate buttons
     wrap.bind( 'finished.evtpaginate', function(e, num, isFirst, isLast ){ 
-        if (isFirst) {
+        if (isFirst && isLast) {
+            // A one-page wizard.
+            $('#previous-step-button').addClass('hidden');
+            $('#next-step-button').addClass('hidden');
+            $('#submit-wizard').removeClass('hidden');
+        }
+        else if (isFirst) {
             // This is the first page. Hide the "Previous" pagination button.
             $('#previous-step-button').addClass('hidden');
             $('#next-step-button').removeClass('hidden');
