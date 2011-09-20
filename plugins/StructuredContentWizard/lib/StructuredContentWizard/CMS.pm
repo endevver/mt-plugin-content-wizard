@@ -276,6 +276,14 @@ sub save {
         $asset->modified_by( $app->user->id );
         $asset->save;
 
+        # If the wizard has a `republish` key, some index template(s) are
+        # supposed to be republished when the wizard completes.
+        _republish_after_wizard_completed({
+            republish_key => $scw_yaml->{$wizard_id}->{republish},
+            wizard_id     => $wizard_id,
+            blog          => $app->blog,
+        });
+
         # The asset has been saved. Now just redirect to the Edit Asset page.
         return $app->redirect(
             $app->uri(
